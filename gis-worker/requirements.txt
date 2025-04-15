@@ -10,3 +10,4 @@ scikit-learn  # if used in reverse_geocode.py
 networkx
 numpy
 requests
+tqdm
