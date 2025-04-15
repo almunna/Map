@@ -28,7 +28,7 @@ const RegisterForm = () => {
     setMessage("");
 
     try {
-      const response = await fetch("http://localhost:8000/api/employees/register", {
+      const response = await fetch("https://map-1-n35u.onrender.com/api/employees/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

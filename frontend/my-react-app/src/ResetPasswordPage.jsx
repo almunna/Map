@@ -16,7 +16,7 @@ const ResetPasswordPage = () => {
     setError('');
     setMessage('');
     try {
-      const res = await fetch('http://localhost:8000/api/employees/forgot-password', {
+      const res = await fetch('https://map-1-n35u.onrender.com/api/employees/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -34,7 +34,7 @@ const ResetPasswordPage = () => {
     setError('');
     setMessage('');
     try {
-      const res = await fetch('http://localhost:8000/api/employees/reset-password', {
+      const res = await fetch('https://map-1-n35u.onrender.com/api/employees/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp, newPassword }),

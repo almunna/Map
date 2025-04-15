@@ -526,7 +526,7 @@ const GISPage = () => {
     try {
       // Make sure this URL points to your bulk CSV processing endpoint.
       // (If you removed the test route in /api/gis, this will now process the CSV.)
-      const response = await fetch("http://localhost:8000/api/gis", {
+      const response = await fetch("https://map-1-n35u.onrender.com/api/gis", {
         method: "POST",
         body: formData,
       });
@@ -562,7 +562,7 @@ const GISPage = () => {
     };
 
     try {
-      const response = await fetch("http://localhost:8000/api/gis/process-row", {
+      const response = await fetch("https://map-1-n35u.onrender.com/api/gis/process-row", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
