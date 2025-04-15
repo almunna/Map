@@ -12,12 +12,21 @@ dotenv.config();
 const app = express();
 
 app.use(express.json());
+
 app.use(
   cors({
     credentials: true,
-    origin: process.env.FRONTEND_URL,
+    origin: (origin, callback) => {
+      const allowedOrigins = ['http://localhost:5173', 'https://map-3-9uk3.onrender.com'];
+      if (allowedOrigins.includes(origin) || !origin) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
   })
 );
+
 app.use(cookieParser());
 app.use(morgan());
 
