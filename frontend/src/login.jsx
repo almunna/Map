@@ -23,30 +23,29 @@ const LoginPage = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
+  
     try {
       const response = await fetch('https://map-5.onrender.com/api/employees/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // ✅ this enables cross-origin cookies/sessions
+        credentials: 'include', // Required for cross-origin cookies
         body: JSON.stringify({
           email: form.email,
           password: form.password,
         }),
       });
-    
-
-      const data = await response.json();
-
+  
+      const data = await response.json(); // ✅ Call only once
+  
       if (!response.ok) {
         throw new Error(data.message || 'Invalid credentials');
       }
-
+  
       const { token, user } = data;
-
-      // Save token and role
+  
+      // Store token & role
       if (form.remember) {
         localStorage.setItem('email', user.email);
         localStorage.setItem('token', token);
@@ -55,19 +54,22 @@ const LoginPage = () => {
         sessionStorage.setItem('token', token);
         sessionStorage.setItem('role', user.role);
       }
-
-      // 🔄 Role-based redirection
+  
+      // Role-based redirect
       if (user.role === 'ADMIN') {
         navigate('/admin', { replace: true });
       } else {
         navigate('/', { replace: true });
       }
+  
     } catch (err) {
+      console.error('Login error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
+  
 
   return (
     <div className="bg-[#FFFFFF] max-w-[390px] w-full rounded-[20px] border-[1px] border-gray-300 min-h-[60vh]">

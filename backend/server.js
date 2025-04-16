@@ -1,43 +1,46 @@
-// server.js
 import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
-import employeeRouter from "./Router/router.js"; // For auth endpoints
-import gisRouter from "./controller/gis.js";         // For CSV processing
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
 
-dotenv.config();
+import employeeRouter from "./Router/router.js"; // Auth routes
+import gisRouter from "./controller/gis.js";     // GIS routes
+
+dotenv.config(); // Load environment variables
+
 const app = express();
 
-app.use(express.json());
-const allowedOrigin = process.env.FRONTEND_URL;
+// ✅ Environment Variables
+const PORT = process.env.PORT || 8000;
+const MONGO_URI = process.env.MONGO_URI;
+const FRONTEND_URL = process.env.FRONTEND_URL; // e.g., https://map-3-9uk3.onrender.com
 
+// ✅ Middleware
+app.use(express.json());
+app.use(cookieParser());
+app.use(morgan("dev"));
+
+// ✅ CORS Setup
 app.use(
   cors({
-    origin: function (origin, callback) {
-      if (!origin || origin === allowedOrigin) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: FRONTEND_URL,
     credentials: true,
   })
 );
-app.use(cookieParser());
-app.use(morgan());
 
+// ✅ Database Connection
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(MONGO_URI)
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => console.error("❌ MongoDB Connection Failed:", err));
 
-
-// Routes mounting:
+// ✅ API Routes
 app.use("/api/employees", employeeRouter);
 app.use("/api/gis", gisRouter);
 
-const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+// ✅ Start Server
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
