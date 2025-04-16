@@ -1,3 +1,5 @@
+
+
 // // import React, { useState } from "react";
 // // import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 // // import "leaflet/dist/leaflet.css";
@@ -58,7 +60,7 @@
 // //     setProcessing(true);
 
 // //     try {
-// //       const response = await fetch("http://localhost:8000/api/gis", {
+// //       const response = await fetch("https://map-5.onrender.com/api/gis", {
 // //         method: "POST",
 // //         body: formData,
 // //       });
@@ -221,7 +223,7 @@
 // //     setProcessing(true);
 
 // //     try {
-// //       const response = await fetch("http://localhost:8000/api/gis", {
+// //       const response = await fetch("https://map-5.onrender.com/api/gis", {
 // //         method: "POST",
 // //         body: formData,
 // //       });
@@ -326,7 +328,7 @@
 //     setProcessing(true);
 
 //     try {
-//       const response = await fetch("http://localhost:8000/api/gis", {
+//       const response = await fetch("https://map-5.onrender.com/api/gis", {
 //         method: "POST",
 //         body: formData,
 //       });
@@ -355,7 +357,7 @@
 //     const rowData = tableData[selectedRowIndex];
 
 //     try {
-//       const response = await fetch("http://localhost:8000/api/gis/process-row", {
+//       const response = await fetch("https://map-5.onrender.com/api/gis/process-row", {
 //         method: "POST",
 //         headers: {
 //           "Content-Type": "application/json",
@@ -526,7 +528,7 @@ const GISPage = () => {
     try {
       // Make sure this URL points to your bulk CSV processing endpoint.
       // (If you removed the test route in /api/gis, this will now process the CSV.)
-      const response = await fetch("http://localhost:8000/api/gis", {
+      const response = await fetch("https://map-5.onrender.com/api/gis", {
         method: "POST",
         body: formData,
       });
@@ -562,7 +564,7 @@ const GISPage = () => {
     };
 
     try {
-      const response = await fetch("http://localhost:8000/api/gis/process-row", {
+      const response = await fetch("https://map-5.onrender.com/api/gis/process-row", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
