@@ -30,11 +30,13 @@ const LoginPage = () => {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // ✅ this enables cross-origin cookies/sessions
         body: JSON.stringify({
           email: form.email,
           password: form.password,
         }),
       });
+    
 
       const data = await response.json();
 
