@@ -12,26 +12,20 @@ dotenv.config();
 const app = express();
 
 app.use(express.json());
-
 app.use(
   cors({
     credentials: true,
-    origin: (origin, callback) => {
-      const allowedOrigins = ['http://localhost:5173', 'https://map-3-9uk3.onrender.com'];
-      if (allowedOrigins.includes(origin) || !origin) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
+    origin: process.env.FRONTEND_URL,
   })
 );
-
 app.use(cookieParser());
 app.use(morgan());
 
 mongoose
-  .connect(process.env.MONGO_URI)
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,  // deprecated in Node Driver 4.0.0 (see later note)
+    useUnifiedTopology: true, // deprecated as well
+  })
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => console.error("❌ MongoDB Connection Failed:", err));
 
