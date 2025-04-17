@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: your-backend
+    env: node
+    plan: free
+    buildCommand: "npm install"
+    startCommand: "node server.js"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.6
