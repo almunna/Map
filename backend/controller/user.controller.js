@@ -104,7 +104,8 @@ const loginUser = async (req, res) => {
       });
     }
 
-    // Block unverified users unless ADMIN
+    // ❌ Removed this block to allow login without verification
+    /*
     if (!user.verify_email && user.role !== "ADMIN") {
       return res.status(403).json({
         message: "Your account is not approved by admin yet.",
@@ -112,6 +113,7 @@ const loginUser = async (req, res) => {
         success: false,
       });
     }
+    */
 
     return res.status(200).json({
       message: "Login successfully",
@@ -133,5 +135,6 @@ const loginUser = async (req, res) => {
     });
   }
 };
+
 
 export default {registerUser, loginUser};
