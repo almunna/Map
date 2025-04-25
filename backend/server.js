@@ -4,9 +4,11 @@ import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
-
+import gisProcessRowsRouter from "./controller/gisMap.js";
 import employeeRouter from "./Router/router.js";
-import gisRouter      from "./controller/gis.js";
+import gisRouter from "./controller/gis.js";
+import reverseGeocodeRouter from "./controller/reverseGeocode.js";
+
 
 // ————————————————————————————————————————————————————————————————————
 // Catch truly uncaught errors so the process doesn't silently exit
@@ -43,7 +45,9 @@ mongoose
 
 // — API Routes
 app.use("/api/employees", employeeRouter);
-app.use("/api/gis",       gisRouter);
+app.use("/api/gis",  gisRouter);
+app.use("/api/gis/process-rows", gisProcessRowsRouter);
+app.use("/api/reverse-geocode", reverseGeocodeRouter);
 
 // — Global Error Handler
 // (this must come *after* all app.use(...) calls)

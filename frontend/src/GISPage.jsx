@@ -1,27 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import domtoimage from "dom-to-image";
-
-// Fix Leaflet marker icons
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-});
-
-const AutoZoom = ({ points }) => {
-  const map = useMap();
-  useEffect(() => {
-    if (points.length > 0) {
-      const bounds = L.latLngBounds(points.map((p) => [p.lat, p.lon]));
-      map.fitBounds(bounds, { padding: [50, 50] });
-    }
-  }, [points, map]);
-  return null;
-};
+import React, { useState, useEffect } from "react";
+import GISMap from "./GISMap";
 
 const GISPage = () => {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -32,7 +10,6 @@ const GISPage = () => {
   const [resultsReady, setResultsReady] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
   const [mapPoints, setMapPoints] = useState([]);
-  const mapRef = useRef();
 
   const handleFileChange = (e) => setSelectedFile(e.target.files[0]);
 
@@ -74,84 +51,109 @@ const GISPage = () => {
   };
 
   const handleSelectAll = () => {
-    const keys = (groupedData[dGroups[currentPage]] || []).map((_, idx) => `${currentPage}-${idx}`);
-    setSelectedRows(keys);
+    const keys = currentRows.map((_, idx) => `${currentPage}-${idx}`);
+    setSelectedRows((prev) => [...new Set([...prev, ...keys])]);
   };
 
   const handleSelectNone = () => {
-    const keys = (groupedData[dGroups[currentPage]] || []).map((_, idx) => `${currentPage}-${idx}`);
+    const keys = currentRows.map((_, idx) => `${currentPage}-${idx}`);
     setSelectedRows((prev) => prev.filter((key) => !keys.includes(key)));
   };
 
   const getSelectedLocations = () => {
-    return selectedRows.map((key) => {
-      const [page, idx] = key.split("-").map(Number);
-      const dVal = dGroups[page];
-      return groupedData[dVal]?.[idx];
-    }).filter(Boolean);
-  };
-
-  const handleDownloadMap = () => {
-    const mapNode = mapRef.current;
-    if (!mapNode) return alert("Map not found.");
-    domtoimage
-      .toPng(mapNode)
-      .then((dataUrl) => {
-        const link = document.createElement("a");
-        link.download = "map.png";
-        link.href = dataUrl;
-        link.click();
+    return selectedRows
+      .map((key) => {
+        const [page, idx] = key.split("-").map(Number);
+        const dVal = dGroups[page];
+        return groupedData[dVal]?.[idx];
       })
-      .catch((err) => {
-        console.error("Error generating map image:", err);
-        alert("Failed to download map.");
-      });
+      .filter(Boolean);
   };
 
   const goToPage = (page) => {
     setCurrentPage(page);
-    setSelectedRows([]);
-    setMapPoints([]);
+    setSelectedRows([]); // ✅ clears selected checkboxes when page changes
+    setMapPoints([]);    // ✅ also clears map markers
   };
 
   useEffect(() => {
-    const fetchPoints = async () => {
-      if (selectedRows.length === 0) {
-        setMapPoints([]);
-        return;
-      }
-
-      const selectedData = getSelectedLocations();
-
-      try {
-        const response = await fetch("http://localhost:8000/api/gis/process-rows", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ rows: selectedData }),
-        });
-
-        const json = await response.json();
-        if (json.points) setMapPoints(json.points);
-      } catch (err) {
-        console.error("Error fetching map points:", err);
-      }
-    };
-
-    fetchPoints();
+    const selectedData = getSelectedLocations();
+    const points = selectedData
+      .map((row) => {
+        const lat = parseFloat(row.lat);
+        const lon = parseFloat(row.lon);
+        return !isNaN(lat) && !isNaN(lon) ? { lat, lon } : null;
+      })
+      .filter(Boolean);
+    setMapPoints(points);
   }, [selectedRows]);
 
   const totalPages = dGroups.length;
   const currentDValue = dGroups[currentPage];
   const currentRows = groupedData[currentDValue] || [];
 
+  const renderPageButtons = () => {
+    const windowSize = 8;
+    const buttons = [];
+  
+    let start = Math.max(0, currentPage - Math.floor(windowSize / 2));
+    let end = start + windowSize;
+  
+    if (end > totalPages) {
+      end = totalPages;
+      start = Math.max(0, end - windowSize);
+    }
+  
+    // Main window pages
+    for (let i = start; i < end; i++) {
+      buttons.push(
+        <button
+          key={i}
+          onClick={() => goToPage(i)}
+          className={`px-3 py-1 border rounded ${
+            currentPage === i ? "bg-blue-500 text-white" : "hover:bg-gray-100"
+          }`}
+        >
+          {i + 1}
+        </button>
+      );
+    }
+  
+    // Add "..." if there's a gap before the last 2
+    const lastPages = [totalPages - 2, totalPages - 1];
+    if (totalPages > end + 1) {
+      buttons.push(<span key="dots" className="px-2">...</span>);
+    }
+  
+    // Show last 2 pages if not already visible
+    lastPages.forEach((page) => {
+      if (page >= end) {
+        buttons.push(
+          <button
+            key={page}
+            onClick={() => goToPage(page)}
+            className={`px-3 py-1 border rounded ${
+              currentPage === page ? "bg-blue-500 text-white" : "hover:bg-gray-100"
+            }`}
+          >
+            {page + 1}
+          </button>
+        );
+      }
+    });
+  
+    return buttons;
+  };
+  
+
   return (
     <div className="bg-white max-w-[1000px] w-full rounded-[20px] border border-gray-300 min-h-[60vh] p-5">
-      <h3 className="text-lg font-semibold text-gray-900 mb-5 text-center">GIS Data Table</h3>
+      <h3 className="text-lg font-semibold text-gray-900 mb-5 text-center">
+        GIS Data Table
+      </h3>
 
       {!processing && !resultsReady && (
-        <div className="flex max-w-[300px] flex-col gap-4 ml-auto mr-auto">
+        <div className="flex flex-col gap-4 ml-auto mr-auto max-w-[300px]">
           <input
             type="file"
             accept=".csv"
@@ -160,18 +162,18 @@ const GISPage = () => {
           />
           <button
             onClick={handleStart}
-            className="bg-blue-500 max-w-[200px] min-w-[150px] text-white py-2 rounded-md hover:bg-blue-600 ml-auto mr-auto"
+            className="bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600"
           >
             Process CSV
           </button>
         </div>
       )}
 
-      {processing && <div className="text-center text-sm text-gray-700">Processing...</div>}
+      {processing && <div className="text-center">Processing...</div>}
 
-      {resultsReady && currentRows.length > 0 && (
+      {resultsReady && (
         <>
-          <div className="flex items-center gap-4 mt-4 mb-2">
+          <div className="flex gap-2 mt-4">
             <button
               onClick={handleSelectAll}
               className="bg-yellow-400 text-black px-4 py-2 rounded hover:bg-yellow-500"
@@ -186,133 +188,57 @@ const GISPage = () => {
             </button>
           </div>
 
-          <table className="min-w-full text-sm border border-gray-300 rounded-md text-left mt-1">
-  <thead className="bg-gray-100">
-    <tr>
-      <th className="p-2 border text-center">Select</th>
-      {/* Move 'Number' (d) first, then others excluding address, city, postcode */}
-      {["d", ...Object.keys(currentRows[0]).filter(h => !["address", "postcode", "city", "d"].includes(h))].map((header, idx) => (
-        <th key={idx} className="p-2 border">
-          {header === "d" ? "Number" : header}
-        </th>
-      ))}
-    </tr>
-  </thead>
-  <tbody>
-    {currentRows.map((row, rowIdx) => {
-      const rowKey = `${currentPage}-${rowIdx}`;
-      return (
-        <tr key={rowIdx} className="hover:bg-gray-50">
-          <td className="p-2 border text-center">
-            <input
-              type="checkbox"
-              checked={selectedRows.includes(rowKey)}
-              onChange={() => handleRowToggle(rowKey)}
-            />
-          </td>
-          {/* Reorder values to match header order above */}
-          {["d", ...Object.keys(row).filter(h => !["address", "postcode", "city", "d"].includes(h))].map((key, idx) => (
-            <td key={idx} className="p-2 border">{row[key]}</td>
-          ))}
-        </tr>
-      );
-    })}
-  </tbody>
-</table>
-
+          <table className="min-w-full text-sm border border-gray-300 rounded-md text-left mt-2">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="p-2 border">Select</th>
+                <th className="p-2 border">Number</th>
+                <th className="p-2 border">Latitude</th>
+                <th className="p-2 border">Longitude</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentRows.map((row, rowIdx) => {
+                const rowKey = `${currentPage}-${rowIdx}`;
+                return (
+                  <tr key={rowIdx} className="hover:bg-gray-50">
+                    <td className="p-2 border text-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedRows.includes(rowKey)}
+                        onChange={() => handleRowToggle(rowKey)}
+                      />
+                    </td>
+                    <td className="p-2 border">{row.d}</td>
+                    <td className="p-2 border">{row.lat}</td>
+                    <td className="p-2 border">{row.lon}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
 
           <div className="flex gap-2 justify-center mt-3">
             <button
               disabled={currentPage === 0}
-              onClick={() => goToPage(Math.max(currentPage - 1, 0))}
+              onClick={() => goToPage(currentPage - 1)}
               className="px-3 py-1 border rounded hover:bg-gray-100"
             >
               Previous
             </button>
 
-            {(() => {
-  const pages = [];
-  const shouldShowEllipsis = totalPages > 12;
-
-  for (let i = 0; i < Math.min(8, totalPages); i++) {
-    pages.push(i);
-  }
-
-  if (shouldShowEllipsis) {
-    pages.push("ellipsis");
-    for (let i = totalPages - 4; i < totalPages; i++) {
-      pages.push(i);
-    }
-  } else {
-    for (let i = 8; i < totalPages; i++) {
-      pages.push(i);
-    }
-  }
-
-  return pages.map((pageIndex, idx) =>
-    pageIndex === "ellipsis" ? (
-      <span key={`ellipsis-${idx}`} className="px-2 py-1 text-gray-500">
-        ...
-      </span>
-    ) : (
-      <button
-        key={pageIndex}
-        onClick={() => goToPage(pageIndex)}
-        className={`px-3 py-1 border rounded ${
-          currentPage === pageIndex ? "bg-blue-500 text-white" : "hover:bg-gray-100"
-        }`}
-      >
-        {pageIndex + 1}
-      </button>
-    )
-  );
-})()}
-
+            {renderPageButtons()}
 
             <button
               disabled={currentPage === totalPages - 1}
-              onClick={() => goToPage(Math.min(currentPage + 1, totalPages - 1))}
+              onClick={() => goToPage(currentPage + 1)}
               className="px-3 py-1 border rounded hover:bg-gray-100"
             >
               Next
             </button>
           </div>
 
-          {selectedRows.length > 0 && (
-            <button
-              onClick={handleDownloadMap}
-              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mt-10"
-            >
-              Download Map
-            </button>
-          )}
-
-          <div className="mt-6" ref={mapRef}>
-            <h4 className="text-md font-semibold mb-2">Map Preview</h4>
-            <MapContainer
-              style={{ height: "500px", width: "100%" }}
-              center={[38.6, -90.4]}
-              zoom={9}
-              scrollWheelZoom={true}
-            >
-              <TileLayer
-                attribution='&copy; <a href="https://osm.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              <AutoZoom points={mapPoints} />
-              {mapPoints.map((loc, idx) => (
-  <Marker key={idx} position={[parseFloat(loc.lat), parseFloat(loc.lon)]}>
-    <Popup>
-      <div>
-        <strong>Address:</strong> {loc.address || "N/A"} <br />
-        <strong>City:</strong> {loc.city || "N/A"} <br />
-        <strong>Postcode:</strong> {loc.postcode || "N/A"}
-      </div>
-    </Popup>
-  </Marker>
-))}
-            </MapContainer>
-          </div>
+          <GISMap mapPoints={mapPoints} />
         </>
       )}
     </div>
