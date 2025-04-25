@@ -1,0 +1,13 @@
+{
+  "watch": [
+    "server.js",
+    "Router",
+    "controller"
+  ],
+  "ignore": [
+    "uploads/*",
+    "tile_cache/*",
+    "osm_addresses.csv"
+  ],
+  "exec": "node server.js"
+}
