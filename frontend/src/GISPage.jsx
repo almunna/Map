@@ -43,7 +43,7 @@ const GISPage = () => {
     setProcessing(true);
 
     try {
-      const response = await fetch("http://localhost:8000/api/gis", {
+      const response = await fetch("http://map.aerux.net:8000/api/gis", {
         method: "POST",
         body: formData,
       });
@@ -124,7 +124,7 @@ const GISPage = () => {
       const selectedData = getSelectedLocations();
 
       try {
-        const response = await fetch("http://localhost:8000/api/gis/process-rows", {
+        const response = await fetch("http://map.aerux.net:8000/api/gis/process-rows", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

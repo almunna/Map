@@ -28,7 +28,7 @@ const RegisterForm = () => {
     setMessage("");
 
     try {
-      const response = await fetch("http://localhost:8000/api/employees/register", {
+      const response = await fetch("http://map.aerux.net:8000/api/employees/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
