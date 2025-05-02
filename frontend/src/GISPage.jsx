@@ -23,7 +23,7 @@ const GISPage = () => {
     setProcessing(true);
 
     try {
-      const response = await fetch("http://localhost:8000/api/gis", {
+      const response = await fetch("http://geocode-na1k.onrender.com/api/gis", {
         method: "POST",
         body: formData,
       });

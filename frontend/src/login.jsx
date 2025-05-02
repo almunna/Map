@@ -25,7 +25,7 @@ const LoginPage = () => {
     setError('');
   
     try {
-      const response = await fetch('http://localhost:8000/api/employees/login', {
+      const response = await fetch('http://geocode-na1k.onrender.com/api/employees/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
