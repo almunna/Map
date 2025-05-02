@@ -28,7 +28,7 @@ const RegisterForm = () => {
     setMessage("");
 
     try {
-      const response = await fetch("http://geocode-na1k.onrender.com/api/employees/register", {
+      const response = await fetch("https://geocode-na1k.onrender.com/api/employees/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

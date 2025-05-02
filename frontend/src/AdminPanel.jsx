@@ -7,7 +7,7 @@ const AdminPanel = () => {
 
   const fetchUsers = async () => {
     setLoading(true);
-    const res = await fetch("http://geocode-na1k.onrender.com/api/employees/users");
+    const res = await fetch("https://geocode-na1k.onrender.com/api/employees/users");
     const data = await res.json();
     setUsers(data.users);
     setLoading(false);
@@ -19,7 +19,7 @@ const AdminPanel = () => {
 
   const handleVerify = async (userId) => {
     try {
-      const res = await fetch(`http://geocode-na1k.onrender.com/api/employees/users/${userId}/verify`, {
+      const res = await fetch(`https://geocode-na1k.onrender.com/api/employees/users/${userId}/verify`, {
         method: "PATCH",
       });
 
@@ -40,7 +40,7 @@ const AdminPanel = () => {
   const handleDelete = async (userId) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
-      await fetch(`http://geocode-na1k.onrender.com/api/employees/users/${userId}`, {
+      await fetch(`https://geocode-na1k.onrender.com/api/employees/users/${userId}`, {
         method: "DELETE",
       });
       setUsers((prevUsers) => prevUsers.filter((user) => user._id !== userId));

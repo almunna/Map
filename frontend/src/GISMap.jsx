@@ -92,7 +92,7 @@ const GISMap = ({ mapPoints = [] }) => {
     if (addressCache[key]) return;
 
     try {
-      const response = await fetch("http://geocode-na1k.onrender.com/api/reverse-geocode", {
+      const response = await fetch("https://geocode-na1k.onrender.com/api/reverse-geocode", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lat, lon }),
