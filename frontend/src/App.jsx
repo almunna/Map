@@ -6,6 +6,7 @@ import GISPage from "./GISPage";
 import "./App.css";
 import 'leaflet/dist/leaflet.css';
 import ResetPasswordPage from "./ResetPasswordPage";
+import AdminPanel from "./AdminPanel";
 
 
 // ✅ User/Role based route protection
@@ -37,7 +38,14 @@ function App() {
           <Route path="/auth/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterForm />} />
           <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
-    
+          <Route
+            path="/admin"
+            element={
+              <PrivateRoute roleRequired="ADMIN">
+                <AdminPanel />
+              </PrivateRoute>
+            }
+          />
         </Routes>
       </div>
     </Router>

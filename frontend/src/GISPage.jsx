@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from "react";
 import GISMap from "./GISMap";
+import { saveAs } from "file-saver";
 
 const GISPage = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [groupedData, setGroupedData] = useState({});
   const [dGroups, setDGroups] = useState([]);
+  const [selectedTerritories, setSelectedTerritories] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [processing, setProcessing] = useState(false);
   const [resultsReady, setResultsReady] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
   const [mapPoints, setMapPoints] = useState([]);
+  const [readyToShowMap, setReadyToShowMap] = useState(false);
 
   const handleFileChange = (e) => setSelectedFile(e.target.files[0]);
 
@@ -33,8 +36,16 @@ const GISPage = () => {
         grouped[key].push(row);
       });
 
+      const allKeys = Object.keys(grouped);
       setGroupedData(grouped);
-      setDGroups(Object.keys(grouped));
+      setDGroups(allKeys);
+      setSelectedTerritories(allKeys);
+
+      const allRows = allKeys.flatMap((d, page) =>
+        grouped[d].map((_, idx) => `${page}-${idx}`)
+      );
+      setSelectedRows(allRows);
+
       setResultsReady(true);
       setCurrentPage(0);
     } catch (err) {
@@ -44,20 +55,63 @@ const GISPage = () => {
     }
   };
 
+  const handleTerritoryToggle = (territory, pageIndex) => {
+    const newSelectedTerritories = selectedTerritories.includes(territory)
+      ? selectedTerritories.filter((t) => t !== territory)
+      : [...selectedTerritories, territory];
+
+    setSelectedTerritories(newSelectedTerritories);
+
+    const rowKeys = (groupedData[territory] || []).map((_, idx) => `${pageIndex}-${idx}`);
+    setSelectedRows((prev) => {
+      if (selectedTerritories.includes(territory)) {
+        return prev.filter((key) => !rowKeys.includes(key));
+      } else {
+        return [...new Set([...prev, ...rowKeys])];
+      }
+    });
+  };
+
+  const handleSelectAll = () => {
+    setSelectedTerritories(dGroups);
+    const allRows = dGroups.flatMap((d, page) =>
+      (groupedData[d] || []).map((_, idx) => `${page}-${idx}`)
+    );
+    setSelectedRows(allRows);
+  };
+
+  const handleSelectNone = () => {
+    setSelectedTerritories([]);
+    setSelectedRows([]);
+    setMapPoints([]);
+    setReadyToShowMap(false);
+  };
+
   const handleRowToggle = (key) => {
     setSelectedRows((prev) =>
       prev.includes(key) ? prev.filter((i) => i !== key) : [...prev, key]
     );
   };
 
-  const handleSelectAll = () => {
-    const keys = currentRows.map((_, idx) => `${currentPage}-${idx}`);
-    setSelectedRows((prev) => [...new Set([...prev, ...keys])]);
+  const handleProcessTerritories = () => {
+    const points = getSelectedLocations();
+    setMapPoints(points);
+    setReadyToShowMap(true);
   };
 
-  const handleSelectNone = () => {
-    const keys = currentRows.map((_, idx) => `${currentPage}-${idx}`);
-    setSelectedRows((prev) => prev.filter((key) => !keys.includes(key)));
+  const handleDownloadCSV = () => {
+    const selectedData = selectedRows
+      .map((key) => {
+        const [page, idx] = key.split("-").map(Number);
+        const dVal = dGroups[page];
+        return groupedData[dVal]?.[idx];
+      })
+      .filter(Boolean);
+
+    const csvHeader = Object.keys(selectedData[0] || {}).join(",");
+    const csvBody = selectedData.map((row) => Object.values(row).join(",")).join("\n");
+    const blob = new Blob([csvHeader + "\n" + csvBody], { type: "text/csv;charset=utf-8;" });
+    saveAs(blob, "selected_territories.csv");
   };
 
   const getSelectedLocations = () => {
@@ -67,26 +121,21 @@ const GISPage = () => {
         const dVal = dGroups[page];
         return groupedData[dVal]?.[idx];
       })
-      .filter(Boolean);
-  };
-
-  const goToPage = (page) => {
-    setCurrentPage(page);
-    setSelectedRows([]); // ✅ clears selected checkboxes when page changes
-    setMapPoints([]);    // ✅ also clears map markers
-  };
-
-  useEffect(() => {
-    const selectedData = getSelectedLocations();
-    const points = selectedData
+      .filter(Boolean)
       .map((row) => {
         const lat = parseFloat(row.lat);
         const lon = parseFloat(row.lon);
         return !isNaN(lat) && !isNaN(lon) ? { lat, lon } : null;
       })
       .filter(Boolean);
-    setMapPoints(points);
-  }, [selectedRows]);
+  };
+
+  const goToPage = (page) => {
+    setCurrentPage(page);
+    setSelectedRows([]);
+    setMapPoints([]);
+    setReadyToShowMap(false);
+  };
 
   const totalPages = dGroups.length;
   const currentDValue = dGroups[currentPage];
@@ -95,16 +144,15 @@ const GISPage = () => {
   const renderPageButtons = () => {
     const windowSize = 8;
     const buttons = [];
-  
+
     let start = Math.max(0, currentPage - Math.floor(windowSize / 2));
     let end = start + windowSize;
-  
+
     if (end > totalPages) {
       end = totalPages;
       start = Math.max(0, end - windowSize);
     }
-  
-    // Main window pages
+
     for (let i = start; i < end; i++) {
       buttons.push(
         <button
@@ -118,14 +166,12 @@ const GISPage = () => {
         </button>
       );
     }
-  
-    // Add "..." if there's a gap before the last 2
+
     const lastPages = [totalPages - 2, totalPages - 1];
     if (totalPages > end + 1) {
       buttons.push(<span key="dots" className="px-2">...</span>);
     }
-  
-    // Show last 2 pages if not already visible
+
     lastPages.forEach((page) => {
       if (page >= end) {
         buttons.push(
@@ -141,15 +187,14 @@ const GISPage = () => {
         );
       }
     });
-  
+
     return buttons;
   };
-  
 
   return (
     <div className="bg-white max-w-[1000px] w-full rounded-[20px] border border-gray-300 min-h-[60vh] p-5">
       <h3 className="text-lg font-semibold text-gray-900 mb-5 text-center">
-        GIS Data Table
+        Import CSV from NWS Export
       </h3>
 
       {!processing && !resultsReady && (
@@ -158,7 +203,8 @@ const GISPage = () => {
             type="file"
             accept=".csv"
             onChange={handleFileChange}
-            className="border border-gray-300 rounded-md text-sm px-2 py-1"
+            className="block w-full text-sm text-white bg-blue-600 rounded-md cursor-pointer 
+                       hover:bg-blue-700 transition py-2 px-4 text-center"
           />
           <button
             onClick={handleStart}
@@ -184,15 +230,31 @@ const GISPage = () => {
               onClick={handleSelectNone}
               className="bg-gray-300 text-black px-4 py-2 rounded hover:bg-gray-400"
             >
-              Select None
+              Deselect All
             </button>
           </div>
 
-          <table className="min-w-full text-sm border border-gray-300 rounded-md text-left mt-2">
+          <div className="mt-4">
+            <h4 className="text-md font-semibold mb-2">Select Territories</h4>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {dGroups.map((d, index) => (
+                <label key={d} className="flex items-center gap-2 border px-3 py-1 rounded cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedTerritories.includes(d)}
+                    onChange={() => handleTerritoryToggle(d, index)}
+                  />
+                  <span>{d}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <table className="min-w-full text-sm border border-gray-300 rounded-md text-left mt-4">
             <thead className="bg-gray-100">
               <tr>
                 <th className="p-2 border">Select</th>
-                <th className="p-2 border">Number</th>
+                <th className="p-2 border">Territory</th>
                 <th className="p-2 border">Latitude</th>
                 <th className="p-2 border">Longitude</th>
               </tr>
@@ -238,7 +300,29 @@ const GISPage = () => {
             </button>
           </div>
 
-          <GISMap mapPoints={mapPoints} />
+          <div className="text-center mt-6 flex flex-col items-center gap-3">
+            <button
+              onClick={handleProcessTerritories}
+              className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700"
+            >
+              Process Territories
+            </button>
+            {readyToShowMap && (
+              <button
+                onClick={handleDownloadCSV}
+                className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+              >
+                Download CSV
+              </button>
+            )}
+          </div>
+
+          {readyToShowMap && <GISMap mapPoints={mapPoints} />}
+
+          <p className="text-xl text-gray-500 mt-10 text-center">
+            <strong>Instructions:</strong>{" "}
+            Go to <a href="/" className="text-blue-600 underline hover:text-blue-800">Home</a>, <em>Import or Export → Export → Territories → Territories (CSV)</em>
+          </p>
         </>
       )}
     </div>

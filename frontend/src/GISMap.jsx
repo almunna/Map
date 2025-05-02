@@ -112,16 +112,9 @@ const GISMap = ({ mapPoints = [] }) => {
 
   return (
     <div className="mt-6">
-      {mapPoints.length > 0 && (
-        <button
-          onClick={handleDownloadMap}
-          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mb-4"
-        >
-          Download Map
-        </button>
-      )}
 
-      <div ref={mapRef}>
+
+      <div className="bg-white" ref={mapRef}>
         <h4 className="text-md font-semibold mb-2">Map Preview</h4>
         <MapContainer
           style={{ height: "500px", width: "100%" }}
